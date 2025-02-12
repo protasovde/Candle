@@ -14,20 +14,7 @@
    <string>Settings</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">/*QWidget {
-	font-size: 9pt;
-}*/
-
-QSpinBox, QDoubleSpinBox {
-	padding-top: 1px;
-	padding-bottom: 1px;
-}
-
-QGroupBox {
-	border: none;
-	padding-top: 16;
-	font-weight: bold;
-}</string>
+   <string notr="true"/>
   </property>
   <property name="modal">
    <bool>true</bool>
@@ -71,9 +58,9 @@ QGroupBox {
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>0</y>
-          <width>436</width>
-          <height>1749</height>
+          <y>-862</y>
+          <width>373</width>
+          <height>1675</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -1531,6 +1518,12 @@ QGroupBox {
  </widget>
  <customwidgets>
   <customwidget>
+   <class>GroupBox</class>
+   <extends>QGroupBox</extends>
+   <header location="global">widgets/groupbox.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>ScrollArea</class>
    <extends>QScrollArea</extends>
    <header location="global">widgets/scrollarea.h</header>
@@ -1540,12 +1533,6 @@ QGroupBox {
    <class>Widget</class>
    <extends>QWidget</extends>
    <header location="global">widgets/widget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>GroupBox</class>
-   <extends>QGroupBox</extends>
-   <header location="global">widgets/groupbox.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

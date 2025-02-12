@@ -10,7 +10,11 @@ StyledToolButton::StyledToolButton(QWidget *parent) : QAbstractButton(parent)
     m_hovered = false;
     m_backColor = palette().color(QPalette::Button);
     m_foreColor = palette().color(QPalette::ButtonText);
-    m_highlightColor = QColor(127, 211, 255).darker(120);
+    m_highlightColor = palette().color(QPalette::Highlight).darker(120);
+
+    //m_backColor = QColor(59,59,59);
+    //m_foreColor = QColor(35, 92, 150);
+    //m_highlightColor = QColor(31, 117, 204);
 }
 
 bool StyledToolButton::isHover()
@@ -48,7 +52,8 @@ void StyledToolButton::paintEvent(QPaintEvent *e)
     QPen highlightPen;
 
     if ((!this->isEnabled() && !this->isChecked()) || (!this->isDown() && !this->isChecked() && !this->isHover())) {
-        highlightPen.setColor(Qt::white);
+        //QPalette::Button
+        highlightPen.setColor(palette().color(QPalette::Mid));
     } else if (this->isDown() || this->isChecked()) {
         highlightPen.setColor(m_highlightColor);
     } else if (this->isHover()) {
@@ -61,6 +66,7 @@ void StyledToolButton::paintEvent(QPaintEvent *e)
 
     // Border
     QPen pen(this->isEnabled() ? palette().color(QPalette::Shadow) : palette().color(QPalette::Mid));
+    //QPen pen(this->isEnabled() ? Qt::red : Qt::black);
 
     if ((this->isDown() || this->isChecked()) && this->isEnabled()) pen.setColor(Qt::black);
 

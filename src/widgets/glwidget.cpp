@@ -60,6 +60,8 @@ GLWidget::GLWidget(QWidget *parent) : QGLWidget(parent), m_shaderProgram(0)
     m_targetFps = 60;
 
     QTimer::singleShot(1000, this, SLOT(onFramesTimer()));
+
+    m_machinemode = -1;
 }
 
 GLWidget::~GLWidget()
@@ -503,6 +505,17 @@ void GLWidget::paintEvent(QPaintEvent *pe) {
     str = m_bufferState;
     painter.drawText(QPoint(this->width() - fm.width(str) - 10, y + 15), str);
 
+
+    if (m_machinemode > -1) {
+        QString m_mode;
+        if (m_machinemode == 0)
+            m_mode = QString(tr("Machine %1 mode")).arg("Cutter");
+        else
+            m_mode = QString(tr("Machine %1 mode")).arg("Laser");
+
+        painter.drawText(QPoint(10, this->height() / 2 ), m_mode);
+    }
+
     m_frames++;
 
 #ifdef GLES
@@ -585,4 +598,14 @@ double GLWidget::normalizeAngle(double angle)
     while (angle > 360) angle -= 360;
 
     return angle;
+}
+
+int GLWidget::machineMode() const
+{
+    return m_machinemode;
+}
+
+void GLWidget::setMachineMode(int mode_)
+{
+    m_machinemode = mode_;
 }

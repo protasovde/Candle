@@ -10,7 +10,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 win32: {
     QT += winextras
     DEFINES += WINDOWS
-    QMAKE_LFLAGS += "-Wl,--large-address-aware"
+    #QMAKE_LFLAGS += "-Wl,--large-address-aware"
     QMAKE_CXXFLAGS_DEBUG += -g3 -pg
     QMAKE_LFLAGS_DEBUG += -pg -lgmon
 }
@@ -29,8 +29,8 @@ contains(QT_CONFIG, opengles.) {
 
 TARGET = Candle
 TEMPLATE = app
-VERSION = 1.1.8
-RC_ICONS += images/candle.ico
+VERSION = 1.1.9
+RC_ICONS += images/candledark.ico
 
 DEFINES += sNan=\"65536\"
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
@@ -109,6 +109,7 @@ DEFINES += _USE_MATH_DEFINES
 
 RESOURCES += \
     shaders.qrc \
-    images.qrc
+    images.qrc \
+    styles.qrc
 
 CONFIG += c++11

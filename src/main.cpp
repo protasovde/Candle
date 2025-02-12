@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     QString translationsFolder = qApp->applicationDirPath() + "/translations/";
     QString translationFileName = translationsFolder + qApp->applicationDisplayName() + "_" + loc + ".qm";
 
-    qDebug() << "locale:" << loc;
+    qDebug() << "locale:" << loc << translationFileName;
 
     if(QFile::exists(translationFileName)) {
         QTranslator* translator = new QTranslator();
@@ -62,6 +62,8 @@ int main(int argc, char *argv[])
     }
 
     a.setApplicationVersion(APP_VERSION);
+
+    a.setAttribute(Qt::AA_EnableHighDpiScaling);
 
 #ifdef UNIX
     if (!styleOverrided) foreach (QString str, QStyleFactory::keys()) {
@@ -88,73 +90,52 @@ int main(int argc, char *argv[])
                     QDialog {border: 1px solid palette(mid);}");
 #endif
 
+    // Создаём палитру для тёмной темы оформления
+    QPalette darkPalette;
+
+    // Настраиваем палитру для цветовых ролей элементов интерфейса
+    darkPalette.setColor(QPalette::WindowText, QColor(0xdadada));
+    darkPalette.setColor(QPalette::Button, QColor(0x262626));
+    darkPalette.setColor(QPalette::Dark, QColor(0x1f1f1f));
+    darkPalette.setColor(QPalette::Mid, QColor(0xafafaf));
+    darkPalette.setColor(QPalette::Text, QColor(0xdadada));
+    darkPalette.setColor(QPalette::BrightText, QColor(0xff3333));
+    darkPalette.setColor(QPalette::ButtonText, QColor(0xdadada));
+    darkPalette.setColor(QPalette::ButtonText, QColor(0xdadada));
+    darkPalette.setColor(QPalette::Base, QColor(0x262728));
+    darkPalette.setColor(QPalette::Window, QColor(0x262626));
+    darkPalette.setColor(QPalette::Highlight, QColor(0x1f75cc));
+    darkPalette.setColor(QPalette::HighlightedText, QColor(0xffffff));
+    darkPalette.setColor(QPalette::Link, QColor(0x007af4));
+    darkPalette.setColor(QPalette::LinkVisited, QColor(0xa57aff));
+    darkPalette.setColor(QPalette::AlternateBase, QColor(0x353637));
+    darkPalette.setColor(QPalette::ToolTipBase, QColor(0x111111));
+    darkPalette.setColor(QPalette::ToolTipText, QColor(0xdadada));
+    darkPalette.setColor(QPalette::PlaceholderText , QColor(0xdadada));
+
+
+    // Устанавливаем данную палитру
+    a.setPalette(darkPalette);
+
+    //  DarkGreen
+    //  DarkMaroon
+    QFile theme_file(QString("://styles/%1.qss").arg("Dark"));
+    theme_file.open(QFile::ReadOnly);   //open theme file
+
+    if(theme_file.isOpen())
+    {
+        a.setStyleSheet(theme_file.readAll());        //set the theme here!
+        theme_file.close();
+    }
+    else
+    {
+        qDebug() << "File qss couldn't be opened!";
+    }
+
     a.setStyleSheet(a.styleSheet() + "QWidget {font-size: 8pt}");
 
     frmMain w;
     w.show();
-
-//    qDebug() << GcodePreprocessorUtils::overrideSpeed("G0 X0 Y10 Z200 F123", 50);
-//    qDebug() << GcodePreprocessorUtils::removeComment("G1 X10 ((test comment 1))");
-//    qDebug() << GcodePreprocessorUtils::removeComment("G1 X10 ;;test comment 2");
-//    qDebug() << GcodePreprocessorUtils::parseComment("G1 X10 ((test comment 1))");
-//    qDebug() << GcodePreprocessorUtils::parseComment("G1 X10 ;;test comment 2");
-//    qDebug() << GcodePreprocessorUtils::truncateDecimals(1, "G0 X123.4456 Y3.12345 Z0.5");
-//    qDebug() << GcodePreprocessorUtils::removeAllWhitespace("   test spaces   ");
-//    qDebug() << GcodePreprocessorUtils::parseCodes(QString("G0 X123.4456 Y3.12345 Z0.5").split(' '), 'X');
-//    qDebug() << GcodePreprocessorUtils::parseGCodes("G0 G02 G12 G3 G021 M03");
-//    qDebug() << GcodePreprocessorUtils::parseMCodes("G0 G02 G12 G3 G021 M03");
-//    qDebug() << GcodePreprocessorUtils::splitCommand("G0 X123.4456 Y3.12345 Z0.5");
-//    qDebug() << GcodePreprocessorUtils::updatePointWithCommand("G0 X10 Y20 Z30", QVector3D(10, 10, 10), false);
-//    qDebug() << GcodePreprocessorUtils::updateCenterWithCommand(GcodePreprocessorUtils::splitCommand("G0 X10 Y20 I0 J20 K6"), QVector3D(10, 10, 10), QVector3D(20, 20, 20), false, true);
-//    qDebug() << GcodePreprocessorUtils::generateG1FromPoints(QVector3D(10, 10, 10), QVector3D(20, 20, 20), true, 3);
-//    qDebug() << GcodePreprocessorUtils::getAngle(QVector3D(0, 0, 0), QVector3D(-10, 0, 10));
-//    qDebug() << GcodePreprocessorUtils::calculateSweep(M_PI / 2, 0, false);
-//    qDebug() << GcodePreprocessorUtils::generatePointsAlongArcBDring(QVector3D(10, 0, 0), QVector3D(0, 10, 0), QVector3D(0, 0, 0), false, 10, 0.1, 5);
-
-//    GcodeParser gp;
-
-//    gp.addCommand("G1 X0 Y10");
-//    gp.addCommand("G1 X10 Y0");
-//    gp.addCommand("G1 X10 Y10 Z0");
-//    gp.addCommand("G2 X20 Y0 R10");
-
-//    qDebug() << "PointSegment list";
-
-//    for (int i = 0; i < 10000; i++) {
-//        GcodeParser gp1;
-
-//        gp1.addCommand("G1 X0 Y10");
-//        gp1.addCommand("G1 X10 Y0");
-//        gp1.addCommand("G1 X10 Y10 Z0");
-//        gp1.addCommand("G2 X20 Y0 R10");
-//    }
-
-//    foreach (PointSegment *ps, gp.getPointSegmentList()) {
-//        qDebug() << *ps->point() << ps->isArc() << ps->isClockwise();
-//    }
-
-//    GcodeViewParse gvp;
-//    QList<QString> commands;
-
-//    commands.append("G1 X0 Y10");
-//    commands.append("G1 X10 Y0");
-//    commands.append("G1 X10 Y10 Z0");
-//    commands.append("G2 X20 Y0 Z0 R10");
-
-//    qDebug() << "LineSegment list";
-
-//    for (int i = 0; i < 10000; i++)
-//    {
-//        GcodeViewParse gvp1;
-//        foreach (LineSegment* ls, gvp1.toObjRedux(commands, 5)) {
-//        }
-//    }
-
-//    foreach (LineSegment* ls, gvp.toObjRedux(commands, 5)) {
-//        qDebug() << ls->getStart() << ls->getEnd() << ls->getLineNumber() << ls->isArc();
-//    }
-
-//    return 0;
 
     return a.exec();
 }

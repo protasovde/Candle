@@ -34,6 +34,7 @@
 #include <QMimeData>
 #include "frmmain.h"
 #include "ui_frmmain.h"
+#include <QtGamepad/QGamepad>
 
 frmMain::frmMain(QWidget *parent) :
     QMainWindow(parent),
@@ -201,6 +202,7 @@ frmMain::frmMain(QWidget *parent) :
     m_tableMenu->addAction(tr("&Insert line"), this, SLOT(onTableInsertLine()), insertShortcut->key());
     m_tableMenu->addAction(tr("&Delete lines"), this, SLOT(onTableDeleteLines()), deleteShortcut->key());
 
+    //ui->glwVisualizer->addDrawable(&m_tableSurfaceDrawer);
     ui->glwVisualizer->addDrawable(m_originDrawer);
     ui->glwVisualizer->addDrawable(m_codeDrawer);
     ui->glwVisualizer->addDrawable(m_probeDrawer);
@@ -226,7 +228,7 @@ frmMain::frmMain(QWidget *parent) :
 
     // Console window handling
     connect(ui->grpConsole, SIGNAL(resized(QSize)), this, SLOT(onConsoleResized(QSize)));
-    connect(ui->scrollAreaWidgetContents, SIGNAL(sizeChanged(QSize)), this, SLOT(onPanelsSizeChanged(QSize)));
+    //connect(ui->scrollAreaWidgetContents, SIGNAL(sizeChanged(QSize)), this, SLOT(onPanelsSizeChanged(QSize)));
 
     m_senderErrorBox = new QMessageBox(QMessageBox::Warning, qApp->applicationDisplayName(), QString(),
                                        QMessageBox::Ignore | QMessageBox::Abort, this);
@@ -272,8 +274,8 @@ frmMain::frmMain(QWidget *parent) :
     ui->tblProgram->installEventFilter(this);
     ui->cboJogStep->installEventFilter(this);
     ui->cboJogFeed->installEventFilter(this);
-    ui->splitPanels->handle(1)->installEventFilter(this);
-    ui->splitPanels->installEventFilter(this);
+    //ui->splitPanels->handle(1)->installEventFilter(this);
+    //ui->splitPanels->installEventFilter(this);
 
     connect(&m_timerConnection, SIGNAL(timeout()), this, SLOT(onTimerConnection()));
     connect(&m_timerStateQuery, SIGNAL(timeout()), this, SLOT(onTimerStateQuery()));
@@ -284,6 +286,7 @@ frmMain::frmMain(QWidget *parent) :
     if (qApp->arguments().count() > 1 && isGCodeFile(qApp->arguments().last())) {
         loadFile(qApp->arguments().last());
     }
+
 }
 
 frmMain::~frmMain()
@@ -416,6 +419,12 @@ void frmMain::loadSettings()
     ui->chkAutoScroll->setVisible(ui->splitter->sizes()[1]);
     resizeCheckBoxes();
 
+    QByteArray sitebarState = set.value("sitebar", QByteArray()).toByteArray();
+    if (sitebarState.length() == 0) {
+        ui->sidebarSplitter->setStretchFactor(0, 1);
+        ui->sidebarSplitter->setStretchFactor(1, 1);
+    } else ui->sidebarSplitter->restoreState(sitebarState);
+
     ui->cboCommand->setMinimumHeight(ui->cboCommand->height());
     ui->cmdClearConsole->setFixedHeight(ui->cboCommand->height());
     ui->cmdCommandSend->setFixedHeight(ui->cboCommand->height());
@@ -464,7 +473,7 @@ void frmMain::loadSettings()
     // Update right panel width
     applySettings();
     show();
-    ui->scrollArea->updateMinimumWidth();
+    //ui->scrollArea->updateMinimumWidth();
 
     // Restore panels state
     ui->grpUserCommands->setChecked(set.value("userCommandsPanel", true).toBool());
@@ -524,6 +533,7 @@ void frmMain::saveSettings()
     set.setValue("autoScroll", ui->chkAutoScroll->isChecked());
     set.setValue("header", ui->tblProgram->horizontalHeader()->saveState());
     set.setValue("splitter", ui->splitter->saveState());
+    set.setValue("sitebar", ui->sidebarSplitter->saveState());
     set.setValue("formGeometry", this->saveGeometry());
     set.setValue("formSettingsSize", m_settings->size());    
     set.setValue("userCommandsPanel", ui->grpUserCommands->isChecked());
@@ -677,7 +687,7 @@ void frmMain::updateControlsState() {
     }
 #endif
 
-    style()->unpolish(ui->cmdFileOpen);
+    /*style()->unpolish(ui->cmdFileOpen);
     style()->unpolish(ui->cmdFileReset);
     style()->unpolish(ui->cmdFileSend);
     style()->unpolish(ui->cmdFilePause);
@@ -686,14 +696,14 @@ void frmMain::updateControlsState() {
     ui->cmdFileReset->ensurePolished();
     ui->cmdFileSend->ensurePolished();
     ui->cmdFilePause->ensurePolished();
-    ui->cmdFileAbort->ensurePolished();
+    ui->cmdFileAbort->ensurePolished();*/
 
     // Heightmap
     m_heightMapBorderDrawer.setVisible(ui->chkHeightMapBorderShow->isChecked() && m_heightMapMode);
     m_heightMapGridDrawer.setVisible(ui->chkHeightMapGridShow->isChecked() && m_heightMapMode);
     m_heightMapInterpolationDrawer.setVisible(ui->chkHeightMapInterpolationShow->isChecked() && m_heightMapMode);
 
-    ui->grpProgram->setTitle(m_heightMapMode ? tr("Heightmap") : tr("G-code program"));
+    //ui->grpProgram->setTitle(m_heightMapMode ? tr("Heightmap") : tr("G-code program"));
     ui->grpProgram->setProperty("overrided", m_heightMapMode);
     style()->unpolish(ui->grpProgram);
     ui->grpProgram->ensurePolished();
@@ -705,6 +715,8 @@ void frmMain::updateControlsState() {
     ui->cboJogFeed->setEditable(!ui->chkKeyboardControl->isChecked());
     ui->cboJogStep->setStyleSheet(QString("font-size: %1").arg(m_settings->fontSize()));
     ui->cboJogFeed->setStyleSheet(ui->cboJogStep->styleSheet());
+
+    //ui->txtWPosX->setMinimumSize()
 
     ui->chkTestMode->setVisible(!m_heightMapMode);
     ui->chkAutoScroll->setVisible(ui->splitter->sizes()[1] && !m_heightMapMode);
@@ -729,6 +741,7 @@ void frmMain::updateControlsState() {
 void frmMain::openPort()
 {
     if (m_serialPort.open(QIODevice::ReadWrite)) {
+        qDebug() << "Serial Post opened";
         ui->txtStatus->setText(tr("Port opened"));
         ui->txtStatus->setStyleSheet(QString("background-color: palette(button); color: palette(text);"));
 //        updateControlsState();
@@ -787,6 +800,8 @@ void frmMain::sendCommand(QString command, int tableIndex, bool showInConsole)
         m_fileEndSent = true;
     }
 
+    qDebug() << "Write data: >> " << command;
+
     m_serialPort.write((command + "\r").toLatin1());
 }
 
@@ -813,13 +828,20 @@ void frmMain::grblReset()
     m_queue.clear();
 
     // Prepare reset response catch
-    CommandAttributes ca;
+    CommandAttributes ca, c_config;
     ca.command = "[CTRL+X]";
     if (m_settings->showUICommands()) ui->txtConsole->appendPlainText(ca.command);
     ca.consoleIndex = m_settings->showUICommands() ? ui->txtConsole->blockCount() - 1 : -1;
     ca.tableIndex = -1;
     ca.length = ca.command.length() + 1;
     m_commands.append(ca);
+
+    /*c_config.command = "$$";
+    if (m_settings->showUICommands()) ui->txtConsole->appendPlainText(c_config.command);
+    c_config.consoleIndex = m_settings->showUICommands() ? ui->txtConsole->blockCount() - 1 : -1;
+    c_config.tableIndex = -1;
+    c_config.length = c_config.command.length() + 1;
+    m_commands.append(c_config);*/
 
     updateControlsState();
 }
@@ -838,7 +860,10 @@ int frmMain::bufferLength()
 void frmMain::onSerialPortReadyRead()
 {
     while (m_serialPort.canReadLine()) {
-        QString data = m_serialPort.readLine().trimmed();
+        QString rawData = m_serialPort.readLine();
+        QString data = rawData.trimmed();
+
+        qDebug() << "Read data: << " << data;
 
         // Filter prereset responses
         if (m_reseting) {
@@ -1084,12 +1109,13 @@ void frmMain::onSerialPortReadyRead()
             // Get feed/spindle values
             static QRegExp fs("FS:([^,]*),([^,^|^>]*)");            
             if (fs.indexIn(data) != -1) {
-                ui->glwVisualizer->setSpeedState((QString(tr("F/S: %1 / %2")).arg(fs.cap(1)).arg(fs.cap(2))));
+                ui->glwVisualizer->setSpeedState((QString(tr("F/S: %1 / %2")).arg(fs.cap(1), fs.cap(2))));
             }
 
         } else if (data.length() > 0) {
 
             // Processed commands
+
             if (m_commands.length() > 0 && !dataIsFloating(data)
                     && !(m_commands[0].command != "[CTRL+X]" && dataIsReset(data))) {
 
@@ -1159,6 +1185,8 @@ void frmMain::onSerialPortReadyRead()
                     if (ca.command == "[CTRL+X]") {
                         m_resetCompleted = true;
                         m_updateParserStatus = true;
+
+                        sendCommand("$$", -1, m_settings->showUICommands());
                     }
 
                     // Clear command buffer on "M2" & "M30" command (old firmwares)
@@ -1329,10 +1357,23 @@ void frmMain::onSerialPortReadyRead()
                     }
 
                     response.clear();
+                } else if (m_commands[0].command == "$$" && dataIsSettings(data)) {
+                    //qDebug() << "setting responce";
+
+                    QRegExp rx("^(\\$\\d+)=(.*)$");
+                    if (rx.indexIn(data) != -1) {
+                        qDebug() << "setting data:" << rx.cap(1) << rx.cap(2);
+                    }
+
+                    if (rx.cap(1) == "$32") {
+                        qDebug() << "currrent mode:" << rx.cap(2);
+
+                        ui->glwVisualizer->setMachineMode(rx.cap(2).toInt());
+                    }
+
                 } else {
                     response.append(data + "; ");
                 }
-
             } else {
                 // Unprocessed responses
                 qDebug() << "floating response:" << data;
@@ -1609,7 +1650,7 @@ void frmMain::on_cmdFileOpen_clicked()
         if (!saveChanges(false)) return;
 
         QString fileName  = QFileDialog::getOpenFileName(this, tr("Open"), m_lastFolder,
-                                   tr("G-Code files (*.nc *.ncc *.ngc *.tap *.txt);;All files (*.*)"));
+                                   tr("G-Code files (*.nc *.ncc *.cnc *.ngc *.tap *.txt);;All files (*.*)"));
 
         if (!fileName.isEmpty()) m_lastFolder = fileName.left(fileName.lastIndexOf(QRegExp("[/\\\\]+")));
 
@@ -2209,8 +2250,8 @@ void frmMain::applySettings() {
     ui->slbSpindle->setMinimum(m_settings->spindleSpeedMin());
     ui->slbSpindle->setMaximum(m_settings->spindleSpeedMax());
 
-    ui->scrollArea->setVisible(m_settings->panelHeightmap() || m_settings->panelOverriding()
-                               || m_settings->panelJog() || m_settings->panelSpindle());
+    //ui->scrollArea->setVisible(m_settings->panelHeightmap() || m_settings->panelOverriding()
+    //                           || m_settings->panelJog() || m_settings->panelSpindle());
 
     ui->grpUserCommands->setVisible(m_settings->panelUserCommands());
     ui->grpHeightMap->setVisible(m_settings->panelHeightmap());
@@ -2735,6 +2776,16 @@ bool frmMain::dataIsReset(QString data) {
     return QRegExp("^GRBL|GCARVIN\\s\\d\\.\\d.").indexIn(data.toUpper()) != -1;
 }
 
+bool frmMain::dataIsSettings(QString data) {
+    bool result;
+
+    result = QRegExp("^\\S\\d+=.*$").indexIn(data.toUpper()) != -1;
+
+    qDebug() << "ataIsSettings" << data << result;
+
+    return result;
+}
+
 QString frmMain::feedOverride(QString command)
 {
     // Feed override if not in heightmap probing mode
@@ -2846,13 +2897,13 @@ bool frmMain::eventFilter(QObject *obj, QEvent *event)
         }
 
     // Splitter events
-    } else if (obj == ui->splitPanels && event->type() == QEvent::Resize) {
+    } else if (/*obj == ui->splitPanels && event->type() == QEvent::Resize*/ 0==1) {
         // Resize splited widgets
-        onPanelsSizeChanged(ui->scrollAreaWidgetContents->sizeHint());
+        //onPanelsSizeChanged(ui->scrollAreaWidgetContents->sizeHint());
 
     // Splitter handle events
-    } else if (obj == ui->splitPanels->handle(1)) {
-        int minHeight = getConsoleMinHeight();
+    } else if (/*obj == ui->splitPanels->handle(1) && */1==0) {
+        //int minHeight = getConsoleMinHeight();
         switch (event->type()) {
         case QEvent::MouseButtonPress:
             // Store current console group box minimum & real heights
@@ -2860,11 +2911,11 @@ bool frmMain::eventFilter(QObject *obj, QEvent *event)
             m_storedConsoleHeight = ui->grpConsole->height();
 
             // Update splited sizes
-            ui->splitPanels->setSizes(QList<int>() << ui->scrollArea->height() << ui->grpConsole->height());
+            //ui->splitPanels->setSizes(QList<int>() << ui->scrollArea->height() << ui->grpConsole->height());
 
             // Set new console mimimum height
-            ui->grpConsole->setMinimumHeight(qMax(minHeight, ui->splitPanels->height()
-                - ui->scrollAreaWidgetContents->sizeHint().height() - ui->splitPanels->handleWidth() - 4));
+            //ui->grpConsole->setMinimumHeight(qMax(minHeight, ui->splitPanels->height()
+            //    - ui->scrollAreaWidgetContents->sizeHint().height() - ui->splitPanels->handleWidth() - 4));
             break;
         case QEvent::MouseButtonRelease:
             // Store new console minimum height if height was changed with split handle
@@ -2876,13 +2927,13 @@ bool frmMain::eventFilter(QObject *obj, QEvent *event)
             break;
         case QEvent::MouseButtonDblClick:
             // Switch to min/max console size
-            if (ui->grpConsole->height() == minHeight || !ui->scrollArea->verticalScrollBar()->isVisible()) {
+            /*if (ui->grpConsole->height() == minHeight || !ui->scrollArea->verticalScrollBar()->isVisible()) {
                 ui->splitPanels->setSizes(QList<int>() << ui->scrollArea->minimumHeight()
                 << ui->splitPanels->height() - ui->splitPanels->handleWidth() - ui->scrollArea->minimumHeight());
             } else {
                 ui->grpConsole->setMinimumHeight(minHeight);
                 onPanelsSizeChanged(ui->scrollAreaWidgetContents->sizeHint());
-            }
+            }*/
             break;
         default:
             break;
@@ -2910,11 +2961,11 @@ void frmMain::onConsoleResized(QSize size)
     }
 }
 
-void frmMain::onPanelsSizeChanged(QSize size)
+void frmMain::onPanelsSizeChanged(/*QSize size*/)
 {
-    ui->splitPanels->setSizes(QList<int>() << size.height() + 4
-                              << ui->splitPanels->height() - size.height()
-                              - 4 - ui->splitPanels->handleWidth());
+    //ui->splitPanels->setSizes(QList<int>() << size.height() + 4
+    //                          << ui->splitPanels->height() - size.height()
+    //                          - 4 - ui->splitPanels->handleWidth());
 }
 
 bool frmMain::keyIsMovement(int key)
@@ -3977,3 +4028,9 @@ void frmMain::on_cmdStop_clicked()
     m_queue.clear();
     m_serialPort.write(QByteArray(1, char(0x85)));
 }
+
+void frmMain::on_actionFrmTest_triggered()
+{
+    //m_frmTest.exec();
+}
+

@@ -9,7 +9,7 @@
 #include <QOpenGLTexture>
 #include "utils/util.h"
 
-#define sNan 65536.0
+//#define sNan 65536.0
 
 struct VertexData
 {

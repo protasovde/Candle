@@ -80,6 +80,9 @@ public:
     QString pinState() const;
     void setPinState(const QString &pinState);
 
+    int machineMode() const;
+    void setMachineMode(int _mode);
+
 signals:
     void rotationChanged();
     void resized();
@@ -132,6 +135,8 @@ private:
 
     QColor m_colorBackground;
     QColor m_colorText;
+
+    int m_machinemode;
 
 protected:
     void initializeGL();

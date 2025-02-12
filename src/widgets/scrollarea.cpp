@@ -14,14 +14,14 @@ ScrollArea::ScrollArea(QWidget *parent) : QScrollArea(parent)
     m_update = false;
     m_width = 0;
 
-    this->setStyleSheet("QScrollArea {border-top: 2px solid transparent; border-bottom: 2px solid transparent;}\
+    /*this->setStyleSheet("QScrollArea {border-top: 2px solid transparent; border-bottom: 2px solid transparent;}\
                         QScrollArea[topBorder=\"true\"] {border-top: 2px solid qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:1 #D5DFE5, stop:0 white);}\
                         QScrollArea[bottomBorder=\"true\"] {border-bottom: 2px solid qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:1 #D5DFE5, stop:0 white);}");
 
     this->verticalScrollBar()->setStyleSheet("QScrollBar:vertical {border: none; width: 2px; padding-top: 8px;}\
                                              QScrollBar::handle:vertical {background: darkgray;}\
                                              QScrollBar::add-line:vertical {border: none; background: none; height: 0px;}\
-                                             QScrollBar::sub-line:vertical {border: none; background: none; height: 0px;}");
+                                             QScrollBar::sub-line:vertical {border: none; background: none; height: 0px;}");*/
 
     connect(this->verticalScrollBar(), SIGNAL(valueChanged(int)), this, SLOT(onVerticalScrollBarValueChanged(int)));
 }
@@ -123,13 +123,13 @@ void ScrollArea::updateBorders()
 #ifdef GLES
     return;
 #else
-    QScrollBar* bar = this->verticalScrollBar();
+    /*QScrollBar* bar = this->verticalScrollBar();
     bool fitted = this->geometry().height() > this->widget()->sizeHint().height();
 
     this->setProperty("topBorder", bar->value() > bar->minimum() && !fitted);
     this->setProperty("bottomBorder", bar->value() < bar->maximum() && !fitted);
 
     style()->unpolish(this);
-    this->ensurePolished();
+    this->ensurePolished();*/
 #endif
 }

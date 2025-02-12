@@ -46,7 +46,7 @@ void SliderBox::setCurrentValue(int value)
     m_currentValue = value;
 
     ui->sliValue->setCurrentValue(value / m_ratio);
-    ui->txtValue->setStyleSheet(value == ui->txtValue->value() || !this->isChecked() ? "color: palette(text);" : "color: red;");
+    //ui->txtValue->setStyleSheet(value == ui->txtValue->value() || !this->isChecked() ? "color: palette(text);" : "color: red;");
 }
 
 int SliderBox::sliderPosition()
@@ -109,7 +109,7 @@ void SliderBox::on_sliValue_valueChanged(int value)
 {
     (void)(value);
     if (this->isChecked()) {
-        ui->txtValue->setStyleSheet("color: red;");
+        //ui->txtValue->setStyleSheet("color: red;");
         m_timerValueChanged.start();
     }
 }

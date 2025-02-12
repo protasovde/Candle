@@ -20,6 +20,7 @@
 
 #include "parser/gcodeviewparse.h"
 
+//#include "drawers/tablesurfacedrawer.h"
 #include "drawers/origindrawer.h"
 #include "drawers/gcodedrawer.h"
 #include "drawers/tooldrawer.h"
@@ -102,7 +103,7 @@ private slots:
     void onCboCommandReturnPressed();
     void onTableCurrentChanged(QModelIndex idx1, QModelIndex idx2);
     void onConsoleResized(QSize size);
-    void onPanelsSizeChanged(QSize size);
+    void onPanelsSizeChanged(/*QSize size*/);
     void onCmdUserClicked(bool checked);
     void onOverridingToggled(bool checked);
     void onActSendFromLineTriggered();
@@ -193,6 +194,8 @@ private slots:
 
     void on_cmdStop_clicked();
 
+    void on_actionFrmTest_triggered();
+
 protected:
     void showEvent(QShowEvent *se);
     void hideEvent(QHideEvent *he);
@@ -208,6 +211,8 @@ private:
     Ui::frmMain *ui;
     GcodeViewParse m_viewParser;
     GcodeViewParse m_probeParser;
+
+    //TableSurfaceDrawer m_tableSurfaceDrawer;
 
     OriginDrawer *m_originDrawer;
 
@@ -340,6 +345,7 @@ private:
     bool dataIsFloating(QString data);
     bool dataIsEnd(QString data);
     bool dataIsReset(QString data);
+    bool dataIsSettings(QString data);
 
     QTime updateProgramEstimatedTime(QList<LineSegment *> lines);
     bool saveProgramToFile(QString fileName, GCodeTableModel *model);
@@ -377,6 +383,7 @@ private:
     void updateOverride(SliderBox *slider, int value, char command);
     void jogStep();
     void updateJogTitle();
+
 };
 
 #endif // FRMMAIN_H
