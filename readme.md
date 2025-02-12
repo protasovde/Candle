@@ -28,4 +28,4 @@ Please read GRBL wiki:
 - GRBL v1.1: https://github.com/gnea/grbl/wiki
 
 "Candle" main window:
-![screenshot](/screenshots/screenshot_heightmap_original.png)
+![screenshot](/screenshots/candle-main-winndw.png)
