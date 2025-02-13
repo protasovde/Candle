@@ -13,6 +13,27 @@ frmSettings::frmSettings(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::frmSettings)
 {
+
+    visualizeColorNames << "ToolpathZMovement"
+                        << "ToolpathHighlight"
+                        << "ToolpathStart"
+                        << "ToolpathEnd"
+                        << "VisualizerBackground"
+                        << "VisualizerText"
+                        << "Tool"
+                        << "ToolpathDrawn"
+                        << "ToolpathNormal";
+
+    visualizeColors << 0x6b727c
+                    << 0xf9ae57
+                    << 0x55ff00
+                    << 0x55ffff
+                    << 0x303841
+                    << 0xffffff
+                    << 0xffffff
+                    << 0x4c5863
+                    << 0xec6066;
+
     ui->setupUi(this);
 
     this->setLocale(QLocale::C);
@@ -508,7 +529,27 @@ QList<ColorPicker *> frmSettings::colors()
 QColor frmSettings::colors(QString name)
 {
     ColorPicker *pick = this->findChildren<ColorPicker*>("clp" + name).at(0);
-    if (pick) return pick->color(); else return QColor();
+    QColor result;
+    if (pick)
+        result = pick->color();
+    else
+        result = this->getDefaultColor(name);
+
+    return result;
+}
+
+void frmSettings::setColor(QString name, QColor color)
+{
+    ColorPicker *pick = this->findChildren<ColorPicker*>("clp" + name).at(0);
+    if (pick) {
+        pick->setColor(color);
+    }
+}
+
+QColor frmSettings::getDefaultColor(QString name)
+{
+    int colorIndex = visualizeColorNames.indexOf(name);
+    return QColor(visualizeColors[colorIndex]);
 }
 
 int frmSettings::fontSize()

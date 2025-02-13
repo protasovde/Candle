@@ -419,11 +419,17 @@ void frmMain::loadSettings()
     ui->chkAutoScroll->setVisible(ui->splitter->sizes()[1]);
     resizeCheckBoxes();
 
-    QByteArray sitebarState = set.value("sitebar", QByteArray()).toByteArray();
-    if (sitebarState.length() == 0) {
-        ui->sidebarSplitter->setStretchFactor(0, 1);
-        ui->sidebarSplitter->setStretchFactor(1, 1);
-    } else ui->sidebarSplitter->restoreState(sitebarState);
+    QByteArray rightState = set.value("rightSplitter", QByteArray()).toByteArray();
+    if (rightState.length() == 0) {
+        ui->rightSplitter->setStretchFactor(0, 1);
+        ui->rightSplitter->setStretchFactor(1, 1);
+    } else ui->rightSplitter->restoreState(rightState);
+
+    QByteArray leftState = set.value("leftSplitter", QByteArray()).toByteArray();
+    if (leftState.length() == 0) {
+        ui->leftSplitter->setStretchFactor(0, 1);
+        ui->leftSplitter->setStretchFactor(1, 1);
+    } else ui->leftSplitter->restoreState(leftState);
 
     ui->cboCommand->setMinimumHeight(ui->cboCommand->height());
     ui->cmdClearConsole->setFixedHeight(ui->cboCommand->height());
@@ -463,7 +469,8 @@ void frmMain::loadSettings()
     ui->chkHeightMapInterpolationShow->setChecked(set.value("heightmapInterpolationShow", false).toBool());
 
     foreach (ColorPicker* pick, m_settings->colors()) {
-        pick->setColor(QColor(set.value(pick->objectName().mid(3), "black").toString()));
+        //pick->setColor(QColor(set.value(pick->objectName().mid(3), "black").toString()));
+        m_settings->setColor(pick->objectName().mid(3), set.value(pick->objectName().mid(3), m_settings->getDefaultColor(pick->objectName().mid(3))).value<QColor>());
     }
 
     updateRecentFilesMenu();
@@ -533,7 +540,8 @@ void frmMain::saveSettings()
     set.setValue("autoScroll", ui->chkAutoScroll->isChecked());
     set.setValue("header", ui->tblProgram->horizontalHeader()->saveState());
     set.setValue("splitter", ui->splitter->saveState());
-    set.setValue("sitebar", ui->sidebarSplitter->saveState());
+    set.setValue("rightSplitter", ui->rightSplitter->saveState());
+    set.setValue("leftSplitter", ui->leftSplitter->saveState());
     set.setValue("formGeometry", this->saveGeometry());
     set.setValue("formSettingsSize", m_settings->size());    
     set.setValue("userCommandsPanel", ui->grpUserCommands->isChecked());

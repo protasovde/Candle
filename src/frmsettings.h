@@ -117,7 +117,10 @@ public:
     void setIgnoreErrors(bool value);
     bool autoLine();
     void setAutoLine(bool value);
-
+    void setColor(QString name, QColor color);
+    QStringList visualizeColorNames;
+    QList<int> visualizeColors;
+    QColor getDefaultColor(QString name);
 protected:
     void showEvent(QShowEvent *se);
 
