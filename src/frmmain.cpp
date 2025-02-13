@@ -34,7 +34,7 @@
 #include <QMimeData>
 #include "frmmain.h"
 #include "ui_frmmain.h"
-#include <QtGamepad/QGamepad>
+
 
 frmMain::frmMain(QWidget *parent) :
     QMainWindow(parent),
@@ -1379,6 +1379,7 @@ void frmMain::onSerialPortReadyRead()
                         ui->glwVisualizer->setMachineMode(rx.cap(2).toInt());
                     }
 
+                    response.append(data + "; ");
                 } else {
                     response.append(data + "; ");
                 }
