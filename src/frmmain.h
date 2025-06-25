@@ -17,6 +17,7 @@
 #include <QDropEvent>
 #include <QProgressDialog>
 #include <exception>
+#include <QtGamepad/QGamepad>
 
 #include "parser/gcodeviewparse.h"
 
@@ -196,6 +197,19 @@ private slots:
 
     void on_actionFrmTest_triggered();
 
+    void on_chkGamepadControl_toggled(bool checked);
+
+    void onTimerGamepad();
+
+    void onAxisLeftXChanged(double value);
+    void onAxisLeftYChanged(double value);
+    void onAxisRightYChanged(double value);
+    void onButtonL1Changed(bool pressed);
+    void onButtonR1Changed(bool pressed);
+    void onButtonXChanged(bool pressed);
+    void onButtonYChanged(bool pressed);
+    void onConnectedChanged(bool value);
+
 protected:
     void showEvent(QShowEvent *se);
     void hideEvent(QHideEvent *he);
@@ -316,6 +330,7 @@ private:
     bool m_jogBlock = false;
     bool m_absoluteCoordinates;
     bool m_storedKeyboardControl;
+    bool m_storedGamepadControl;
 
     // Spindle
     bool m_spindleCW = true;
@@ -382,7 +397,28 @@ private:
     int getConsoleMinHeight();
     void updateOverride(SliderBox *slider, int value, char command);
     void jogStep();
+    double jogCalcDist(double acceleration, int speed);
     void updateJogTitle();
+
+    QGamepadManager* m_gamepad_manager;
+    QGamepad *m_gamepad;
+    void connectGamepad();
+    void disconectGamepad();
+    QMetaObject::Connection axisLeftXConnection;
+    QMetaObject::Connection axisLeftYConnection;
+    QMetaObject::Connection axisRightYConnection;
+    QMetaObject::Connection buttonL1ChangedConnection;
+    QMetaObject::Connection buttonR1ChangedConnection;
+    QMetaObject::Connection buttonXChangedConnection;
+    QMetaObject::Connection buttonYChangedConnection;
+    QMetaObject::Connection connectedChangedConnection;
+
+    QTimer m_timerGamepad;
+    QStringList m_gamepad_speeds;
+
+    double axisLeftX;
+    double axisLeftY;
+    double axisRightY;
 
 };
 

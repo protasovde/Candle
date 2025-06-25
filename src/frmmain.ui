@@ -994,6 +994,13 @@
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="QCheckBox" name="chkGamepadControl">
+                <property name="text">
+                 <string>Gamepad control</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>

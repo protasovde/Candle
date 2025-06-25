@@ -4,8 +4,11 @@
 #
 #-------------------------------------------------
 
-QT       = core gui opengl serialport
+QT       = core gui opengl serialport gamepad
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+#INCLUDEPATH += c:\Qt\Qt5.12.12\Tools\mingw730_64\lib\gcc\x86_64-w64-mingw32\7.3.0\include\c++
+#INCLUDEPATH += c:\Qt\Qt5.12.12\Tools\mingw730_64\lib\gcc\x86_64-w64-mingw32\7.3.0\include\c++\x86_64-w64-mingw32
 
 win32: {
     QT += winextras

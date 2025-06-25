@@ -35,6 +35,8 @@
 #include "frmmain.h"
 #include "ui_frmmain.h"
 
+#include <QtGamepad/QGamepad>
+#include <QLoggingCategory>
 
 frmMain::frmMain(QWidget *parent) :
     QMainWindow(parent),
@@ -287,6 +289,13 @@ frmMain::frmMain(QWidget *parent) :
         loadFile(qApp->arguments().last());
     }
 
+    axisLeftX = 0;
+    axisLeftY = 0;
+    axisRightY = 0;
+
+    m_gamepad_manager = QGamepadManager::instance();
+    connect(&m_timerGamepad, SIGNAL(timeout()), this, SLOT(onTimerGamepad()));
+
 }
 
 frmMain::~frmMain()
@@ -435,7 +444,10 @@ void frmMain::loadSettings()
     ui->cmdClearConsole->setFixedHeight(ui->cboCommand->height());
     ui->cmdCommandSend->setFixedHeight(ui->cboCommand->height());
 
-    m_storedKeyboardControl = set.value("keyboardControl", false).toBool();
+    //m_storedKeyboardControl = set.value("keyboardControl", false).toBool();
+    m_storedKeyboardControl = false;
+    //m_storedGamepadControl = set.value("GamepadControl", false).toBool();
+    m_storedGamepadControl = false;
 
     m_settings->setAutoCompletion(set.value("autoCompletion", true).toBool());
     m_settings->setTouchCommand(set.value("touchCommand").toString());
@@ -550,6 +562,7 @@ void frmMain::saveSettings()
     set.setValue("feedPanel", ui->grpOverriding->isChecked());
     set.setValue("jogPanel", ui->grpJog->isChecked());
     set.setValue("keyboardControl", ui->chkKeyboardControl->isChecked());
+    //set.setValue("GamepadControl", ui->chkGamepadControl->isChecked());
     set.setValue("autoCompletion", m_settings->autoCompletion());
     set.setValue("units", m_settings->units());
     set.setValue("storedX", m_storedX);
@@ -648,7 +661,7 @@ void frmMain::updateControlsState() {
     ui->widgetSpindle->setEnabled(portOpened);
     ui->widgetJog->setEnabled(portOpened && !m_processingFile);
 //    ui->grpConsole->setEnabled(portOpened);
-    ui->cboCommand->setEnabled(portOpened && (!ui->chkKeyboardControl->isChecked()));
+    ui->cboCommand->setEnabled(portOpened && (!ui->chkKeyboardControl->isChecked() && !ui->chkGamepadControl->isChecked()));
     ui->cmdCommandSend->setEnabled(portOpened);
 //    ui->widgetFeed->setEnabled(!m_transferringFile);
 
@@ -687,7 +700,11 @@ void frmMain::updateControlsState() {
     this->setWindowTitle(m_programFileName.isEmpty() ? qApp->applicationDisplayName()
                                                      : m_programFileName.mid(m_programFileName.lastIndexOf("/") + 1) + " - " + qApp->applicationDisplayName());
 
-    if (!m_processingFile) ui->chkKeyboardControl->setChecked(m_storedKeyboardControl);
+    if (!m_processingFile) {
+        ui->chkKeyboardControl->setChecked(m_storedKeyboardControl);
+        ui->chkGamepadControl->setChecked(m_storedGamepadControl);
+    }
+
 
 #ifdef WINDOWS
     if (QSysInfo::windowsVersion() >= QSysInfo::WV_WINDOWS7) {
@@ -717,10 +734,10 @@ void frmMain::updateControlsState() {
     ui->grpProgram->ensurePolished();
 
     ui->grpHeightMapSettings->setVisible(m_heightMapMode);
-    ui->grpHeightMapSettings->setEnabled(!m_processingFile && !ui->chkKeyboardControl->isChecked());
+    ui->grpHeightMapSettings->setEnabled(!m_processingFile && !ui->chkKeyboardControl->isChecked() && !ui->chkGamepadControl->isChecked());
 
-    ui->cboJogStep->setEditable(!ui->chkKeyboardControl->isChecked());
-    ui->cboJogFeed->setEditable(!ui->chkKeyboardControl->isChecked());
+    ui->cboJogStep->setEditable(!ui->chkKeyboardControl->isChecked() && !ui->chkGamepadControl->isChecked());
+    ui->cboJogFeed->setEditable(!ui->chkKeyboardControl->isChecked() && !ui->chkGamepadControl->isChecked());
     ui->cboJogStep->setStyleSheet(QString("font-size: %1").arg(m_settings->fontSize()));
     ui->cboJogFeed->setStyleSheet(ui->cboJogStep->styleSheet());
 
@@ -808,7 +825,7 @@ void frmMain::sendCommand(QString command, int tableIndex, bool showInConsole)
         m_fileEndSent = true;
     }
 
-    qDebug() << "Write data: >> " << command;
+    //qDebug() << "Write data: >> " << command;
 
     m_serialPort.write((command + "\r").toLatin1());
 }
@@ -871,7 +888,7 @@ void frmMain::onSerialPortReadyRead()
         QString rawData = m_serialPort.readLine();
         QString data = rawData.trimmed();
 
-        qDebug() << "Read data: << " << data;
+        //qDebug() << "Read data: << " << data;
 
         // Filter prereset responses
         if (m_reseting) {
@@ -1141,8 +1158,10 @@ void frmMain::onSerialPortReadyRead()
 
                     // Restore absolute/relative coordinate system after jog
                     if (ca.command.toUpper() == "$G" && ca.tableIndex == -2) {
-                        if (ui->chkKeyboardControl->isChecked()) m_absoluteCoordinates = response.contains("G90");
-                        else if (response.contains("G90")) sendCommand("G90", -1, m_settings->showUICommands());
+                        if (ui->chkKeyboardControl->isChecked() || ui->chkGamepadControl->isChecked())
+                            m_absoluteCoordinates = response.contains("G90");
+                        else if (response.contains("G90"))
+                            sendCommand("G90", -1, m_settings->showUICommands());
                     }
 
                     // Jog
@@ -1370,7 +1389,7 @@ void frmMain::onSerialPortReadyRead()
 
                     QRegExp rx("^(\\$\\d+)=(.*)$");
                     if (rx.indexIn(data) != -1) {
-                        qDebug() << "setting data:" << rx.cap(1) << rx.cap(2);
+                        //qDebug() << "setting data:" << rx.cap(1) << rx.cap(2);
                     }
 
                     if (rx.cap(1) == "$32") {
@@ -1900,6 +1919,9 @@ void frmMain::on_cmdFileSend_clicked()
     m_storedKeyboardControl = ui->chkKeyboardControl->isChecked();
     ui->chkKeyboardControl->setChecked(false);
 
+    m_storedGamepadControl = ui->chkGamepadControl->isChecked();
+    ui->chkGamepadControl->setChecked(false);
+
     if (!ui->chkTestMode->isChecked()) storeOffsets(); // Allready stored on check
     storeParserState();
 
@@ -2005,8 +2027,12 @@ void frmMain::onActSendFromLineTriggered()
     m_transferCompleted = false;
     m_processingFile = true;
     m_fileEndSent = false;
+
     m_storedKeyboardControl = ui->chkKeyboardControl->isChecked();
     ui->chkKeyboardControl->setChecked(false);
+
+    m_storedGamepadControl = ui->chkGamepadControl->isChecked();
+    ui->chkGamepadControl->setChecked(false);
 
     if (!ui->chkTestMode->isChecked()) storeOffsets(); // Allready stored on check
     storeParserState();
@@ -2790,7 +2816,7 @@ bool frmMain::dataIsSettings(QString data) {
 
     result = QRegExp("^\\S\\d+=.*$").indexIn(data.toUpper()) != -1;
 
-    qDebug() << "ataIsSettings" << data << result;
+    //qDebug() << "DataIsSettings" << data << result;
 
     return result;
 }
@@ -3006,15 +3032,235 @@ void frmMain::on_chkKeyboardControl_toggled(bool checked)
 
     if (!m_processingFile) m_storedKeyboardControl = checked;
 
+    if (m_storedGamepadControl && m_storedKeyboardControl)
+        m_storedGamepadControl = false;
+
     updateJogTitle();
     updateControlsState();
 }
 
+void frmMain::on_chkGamepadControl_toggled(bool checked)
+{
+    ui->grpJog->setProperty("overrided", checked);
+    style()->unpolish(ui->grpJog);
+    ui->grpJog->ensurePolished();
+
+    // Store/restore coordinate system
+    if (checked) {
+        sendCommand("$G", -2, m_settings->showUICommands());
+    } else {
+        if (m_absoluteCoordinates) sendCommand("G90", -1, m_settings->showUICommands());
+    }
+
+    if (!m_processingFile) m_storedGamepadControl = checked;
+
+    if (m_storedKeyboardControl && m_storedGamepadControl)
+        m_storedKeyboardControl = false;
+
+    if (m_storedGamepadControl) {
+        connectGamepad();
+    } else {
+        disconectGamepad();
+    }
+
+    updateJogTitle();
+    updateControlsState();
+}
+
+void frmMain::onTimerGamepad()
+{
+    double v_x, v_y, v_z
+        , x_axisLeft, y_axisLeft, y_axisRight
+        , axisLeftY_fix = axisLeftY * -1
+        , axisRightY_fix = axisRightY * -1
+        , speed_x, speed_y, speed_z;
+
+    int x_speed_index = 0, y_speed_index = 0, z_speed_index = 0;
+
+    if (axisLeftX >= 0) {
+        x_axisLeft = qMin(1.0, axisLeftX);
+        v_x = qCeil(x_axisLeft);
+    } else {
+        x_axisLeft = qMax(-1.0, axisLeftX);
+        v_x = qFloor(x_axisLeft);
+    }
+
+    if (axisLeftY_fix >= 0) {
+        y_axisLeft = qMin(1.0, axisLeftY_fix);
+        v_y = qCeil(y_axisLeft);
+    } else {
+        y_axisLeft = qMax(-1.0, axisLeftY_fix);
+        v_y = qFloor(y_axisLeft);
+    }
+
+    if (axisRightY_fix >= 0) {
+        y_axisRight = qMin(1.0, axisRightY_fix);
+        v_z = qCeil(y_axisRight);
+    } else {
+        y_axisRight = qMax(-1.0, axisRightY_fix);
+        v_z = qFloor(y_axisRight);
+    }
+
+    x_speed_index = qRound((m_gamepad_speeds.length() - 1) * qAbs(x_axisLeft));
+    y_speed_index = qRound((m_gamepad_speeds.length() - 1) * qAbs(y_axisLeft));
+    z_speed_index = qRound((m_gamepad_speeds.length() - 1) * qAbs(y_axisRight));
+
+    speed_x = m_gamepad_speeds.at(x_speed_index).toDouble();
+    speed_y = m_gamepad_speeds.at(y_speed_index).toDouble();
+    speed_z = m_gamepad_speeds.at(z_speed_index).toDouble();
+
+    qDebug() << "Axis X:" << x_axisLeft << "Y:" << y_axisLeft << "Z:" << y_axisRight
+            << "Speed X:" << speed_x << "Y:" << speed_y << "Z:" << speed_z;
+
+    const double acc = m_settings->acceleration();              // Acceleration mm/sec^2
+
+    double distance_x = jogCalcDist(acc, speed_x)
+        , distance_y = jogCalcDist(acc, speed_y)
+        , distance_z = jogCalcDist(acc, speed_z);
+
+    QVector3D jogVector = QVector3D(v_x * distance_x, v_y * distance_y, v_z * distance_z);
+
+
+    m_jogVector = jogVector;
+
+    //qDebug() << "Move Vextor" << distance << jogVector << m_jogVector;
+
+    //m_jogVector += QVector3D(0, 1, 0);
+    jogStep();
+}
+
+void frmMain::onAxisLeftXChanged(double value)
+{
+    axisLeftX = value;
+    //qDebug() << "Left X" << value;
+}
+
+void frmMain::onAxisLeftYChanged(double value)
+{
+    axisLeftY = value;
+    //qDebug() << "Left Y" << value;
+}
+
+void frmMain::onAxisRightYChanged(double value)
+{
+    axisRightY = value;
+    //qDebug() << "Right Y" << value;
+}
+
+void frmMain::onButtonL1Changed(bool pressed)
+{
+    qDebug() << "Button L1" << pressed;
+    //ui->cboJogFeed->setCurrentIndex(ui->cboJogFeed->findText(set.value("jogFeed").toString()));
+
+    int index = ui->cboJogFeed->currentIndex();
+    if (pressed)
+        ui->cboJogFeed->setCurrentIndex(qMax(0, index-1));
+}
+
+void frmMain::onButtonR1Changed(bool pressed)
+{
+    //qDebug() << "Button R1" << pressed;
+
+    int index = ui->cboJogFeed->currentIndex(),
+        total = ui->cboJogFeed->items().count();
+    if (pressed)
+        ui->cboJogFeed->setCurrentIndex(qMin(total-1, index+1));
+}
+
+void frmMain::onButtonXChanged(bool pressed)
+{
+    if (pressed) {
+        m_queue.clear();
+        m_serialPort.write(QByteArray(1, char(0x85)));
+    }
+}
+
+void frmMain::onButtonYChanged(bool pressed)
+{
+    if (pressed) {
+        m_settingZeroXY = true;
+        sendCommand("G92X0Y0", -1, m_settings->showUICommands());
+        sendCommand("$#", -2, m_settings->showUICommands());
+    }
+}
+
+void frmMain::onConnectedChanged(bool value)
+{
+    if( !value ) {
+        m_queue.clear();
+        m_serialPort.write(QByteArray(1, char(0x85)));
+
+        m_storedGamepadControl = false;
+        ui->chkGamepadControl->setChecked(false);
+        disconectGamepad();
+    }
+}
+
+void frmMain::connectGamepad()
+{
+    QList<int> gamepads;
+    int i = 0;
+    while (i < 10)
+    {
+        qApp->processEvents();
+        qInfo() << "get connected gamepads iteration : " << i;
+        gamepads = m_gamepad_manager->connectedGamepads();
+        if(!gamepads.isEmpty())
+        {
+            i = 10;
+        }
+        i++;
+    }
+
+    qInfo() << "connected gamepads : " << gamepads.size();
+
+    if (!gamepads.isEmpty()) {
+        m_gamepad = new QGamepad(*gamepads.begin(), this);
+
+        axisLeftXConnection = connect(m_gamepad, SIGNAL(axisLeftXChanged(double)), this, SLOT(onAxisLeftXChanged(double)));
+        axisLeftYConnection = connect(m_gamepad, SIGNAL(axisLeftYChanged(double)), this, SLOT(onAxisLeftYChanged(double)));
+        axisRightYConnection = connect(m_gamepad, SIGNAL(axisRightYChanged(double)), this, SLOT(onAxisRightYChanged(double)));
+
+        buttonL1ChangedConnection = connect(m_gamepad, SIGNAL(buttonL1Changed(bool)), this, SLOT(onButtonL1Changed(bool)));
+        buttonR1ChangedConnection = connect(m_gamepad, SIGNAL(buttonR1Changed(bool)), this, SLOT(onButtonR1Changed(bool)));
+
+        buttonXChangedConnection = connect(m_gamepad, SIGNAL(buttonXChanged(bool)), this, SLOT(onButtonXChanged(bool)));
+        buttonYChangedConnection = connect(m_gamepad, SIGNAL(buttonYChanged(bool)), this, SLOT(onButtonYChanged(bool)));
+
+        connectedChangedConnection = connect(m_gamepad, SIGNAL(connectedChanged(bool)), this, SLOT(onConnectedChanged(bool)));
+
+        m_gamepad_speeds = QStringList();
+        m_gamepad_speeds << "0" << ui->cboJogFeed->items();
+
+        m_timerGamepad.setInterval(1000 / 15);
+        m_timerGamepad.start();
+
+        ui->chkGamepadControl->setText( QString("%1 (%2)")
+                                        .arg(tr("Gamepad control"))
+                                        .arg( tr("gamepad connected") ));
+    } else {
+        ui->chkGamepadControl->setText( QString("%1 (%2)")
+                                        .arg(tr("Gamepad control"))
+                                        .arg( tr("gamepad not found") ));
+    }
+}
+
+void frmMain::disconectGamepad(){
+    disconnect(axisLeftXConnection);
+    disconnect(axisLeftYConnection);
+    disconnect(buttonL1ChangedConnection);
+    disconnect(buttonR1ChangedConnection);
+    disconnect(buttonXChangedConnection);
+
+    m_timerGamepad.stop();
+    ui->chkGamepadControl->setText(tr("Gamepad control"));
+}
+
 void frmMain::updateJogTitle()
 {
-    if (ui->grpJog->isChecked() || !ui->chkKeyboardControl->isChecked()) {
+    if (ui->grpJog->isChecked() || (!ui->chkKeyboardControl->isChecked() && !ui->chkGamepadControl->isChecked())) {
         ui->grpJog->setTitle(tr("Jog"));
-    } else if (ui->chkKeyboardControl->isChecked()) {
+    } else if (ui->chkKeyboardControl->isChecked() || ui->chkGamepadControl->isChecked()) {
         ui->grpJog->setTitle(tr("Jog") + QString(tr(" (%1/%2)"))
                              .arg(ui->cboJogStep->currentText().toDouble() > 0 ? ui->cboJogStep->currentText() : tr("C"))
                              .arg(ui->cboJogFeed->currentText()));
@@ -3927,17 +4173,32 @@ void frmMain::updateOverride(SliderBox *slider, int value, char command)
     }
 }
 
+double frmMain::jogCalcDist(double acceleration, int speed)
+{
+    double v = (double)speed / 60;                              // Rapid speed mm/sec
+    int N = 15;                                                 // Planner blocks
+    double dt = qMax(0.01, sqrt(v) / (2 * acceleration * (N - 1)));      // Single jog command time
+    return v * dt;
+}
+
 void frmMain::jogStep()
 {
     if (m_jogVector.length() == 0) return;
 
-    if (ui->cboJogStep->currentText().toDouble() == 0) {
+    int speed = ui->cboJogFeed->currentText().toInt();          // Speed mm/min
+
+    if (m_storedGamepadControl) {
+
+        sendCommand(QString("$J=G21G91X%1Y%2Z%3F%4")
+                    .arg(m_jogVector.x(), 0, 'g', 4)
+                    .arg(m_jogVector.y(), 0, 'g', 4)
+                    .arg(m_jogVector.z(), 0, 'g', 4)
+                    .arg(speed), -2, m_settings->showUICommands());
+
+    } else if (ui->cboJogStep->currentText().toDouble() == 0) {
         const double acc = m_settings->acceleration();              // Acceleration mm/sec^2
-        int speed = ui->cboJogFeed->currentText().toInt();          // Speed mm/min
-        double v = (double)speed / 60;                              // Rapid speed mm/sec
-        int N = 15;                                                 // Planner blocks
-        double dt = qMax(0.01, sqrt(v) / (2 * acc * (N - 1)));      // Single jog command time
-        double s = v * dt;                                          // Jog distance
+
+        double s = jogCalcDist(acc, speed);
 
         QVector3D vec = m_jogVector.normalized() * s;
 
@@ -3949,7 +4210,6 @@ void frmMain::jogStep()
                     .arg(vec.z(), 0, 'g', 4)
                     .arg(speed), -2, m_settings->showUICommands());
     } else {
-        int speed = ui->cboJogFeed->currentText().toInt();          // Speed mm/min
         QVector3D vec = m_jogVector * ui->cboJogStep->currentText().toDouble();
 
         sendCommand(QString("$J=G21G91X%1Y%2Z%3F%4")
@@ -4042,4 +4302,3 @@ void frmMain::on_actionFrmTest_triggered()
 {
     //m_frmTest.exec();
 }
-
